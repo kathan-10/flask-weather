@@ -14,7 +14,8 @@ spec:
     spec:
         containers:
         - name: flask-weather
-          image: kathan1205/flask-weather:latest
+          image: kathan1205/flask-weather:1
+          imagePullPolicy: Always
           ports:
           - containerPort: 3000
   

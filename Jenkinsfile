@@ -1,3 +1,4 @@
+```groovy id="n0kjlwm"
 pipeline {
 
     agent any
@@ -5,6 +6,7 @@ pipeline {
     environment {
 
         IMAGE_NAME = "kathan1205/flask-weather"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -22,7 +24,9 @@ pipeline {
 
             steps {
 
-                sh 'docker build -t $IMAGE_NAME:latest .'
+                sh '''
+                docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                '''
             }
         }
 
@@ -39,9 +43,19 @@ pipeline {
                     sh '''
                     echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
-                    docker push $IMAGE_NAME:latest
+                    docker push $IMAGE_NAME:$IMAGE_TAG
                     '''
                 }
+            }
+        }
+
+        stage('Update Deployment File') {
+
+            steps {
+
+                sh '''
+                sed -i "s|image:.*|image: $IMAGE_NAME:$IMAGE_TAG|g" deployment.yml
+                '''
             }
         }
 
@@ -51,9 +65,26 @@ pipeline {
 
                 sh '''
                 kubectl apply -f deployment.yml
+
                 kubectl apply -f service.yml
+
+                kubectl rollout restart deployment flask-weather
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+
+            steps {
+
+                sh '''
+                kubectl get pods
+
+                kubectl get svc
                 '''
             }
         }
     }
 }
+```
+
